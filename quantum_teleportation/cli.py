@@ -4,7 +4,9 @@ Command-Line Interface for Three-Qubit Quantum Teleportation & Bell State Measur
 import argparse
 import csv
 import json
+import os
 import sys
+from pathlib import Path
 from .models import FrontierPayload
 from .agents import TeleportationCoordinator
 
@@ -69,7 +71,17 @@ def main(argv=None):
         return 0
 
     if args.command == "batch":
-        with open(args.input, mode="r", encoding="utf-8-sig") as f:
+        # Path traversal protection: resolve and validate input path
+        input_path = Path(args.input).resolve()
+        cwd = Path.cwd().resolve()
+        if not str(input_path).startswith(str(cwd)):
+            print(f"Error: Input path must be within the current working directory: {cwd}")
+            return 1
+        if not input_path.is_file():
+            print(f"Error: Input file not found: {args.input}")
+            return 1
+
+        with open(input_path, mode="r", encoding="utf-8-sig") as f:
             reader = csv.DictReader(f)
             fieldnames = list(reader.fieldnames or [])
             rows = list(reader)
@@ -93,7 +105,13 @@ def main(argv=None):
             row_dict["consensus_summary"] = dossier["consensus_summary"]
             out_rows.append(row_dict)
 
-        with open(args.output, mode="w", encoding="utf-8", newline="") as f:
+        # Path traversal protection: resolve and validate output path
+        output_path = Path(args.output).resolve()
+        if not str(output_path).startswith(str(cwd)):
+            print(f"Error: Output path must be within the current working directory: {cwd}")
+            return 1
+
+        with open(output_path, mode="w", encoding="utf-8", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=out_fields)
             writer.writeheader()
             writer.writerows(out_rows)

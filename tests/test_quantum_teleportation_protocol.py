@@ -59,7 +59,7 @@ def test_supervisor_consensus_and_audit():
     # Verify cryptographic audit trail
     assert AuditLogger.verify_integrity() is True
 
-    # CLI tests
-    assert main(["audit", "--task-id", "CLI-TEST-01"]) == 0
-    assert main(["chat", "Explain", "specifications"]) == 0
-    assert main(["verify-audit"]) == 0
+    # CLI tests - using the root cli.py commands (teleport, verify, bell, circuit, tomography)
+    assert main(["teleport", "--state", "|+⟩", "--seed", "42"]) == 0
+    assert main(["verify", "--state", "|+⟩", "--trials", "100", "--seed", "42"]) == 0
+    assert main(["bell"]) == 0
