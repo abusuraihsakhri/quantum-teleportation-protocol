@@ -46,7 +46,7 @@ python -m quantum_teleportation.cli serve --host 127.0.0.1 --port 8000
 
 The legacy server offers `GET /health`, `POST /api/audit` and `POST /api/chat`. An alternate agent-based API with `/metrics` and `/api/audit/logs` is available with `uvicorn agents.api:app --host 127.0.0.1 --port 8000`. The backend operations console (`web/index.html`) requires a running API on the **same origin**; unlike the static browser simulator, it does not work as a standalone GitHub Pages app.
 
-To run the legacy server using Docker, use `docker build -t quantum-teleportation-protocol .` and `docker run -p 8000:8000 quantum-teleportation-protocol`. For Compose, generate a random private `AUDIT_SECRET_KEY` and provide it in a local `.env` file (see `.env.example`). Do not commit or publish this key.
+To run the legacy server using Docker, use `docker build -t quantum-teleportation-protocol .` and `docker run -p 127.0.0.1:8000:8000 quantum-teleportation-protocol`. For Compose, generate a random private `AUDIT_SECRET_KEY` and provide it in a local `.env` file (see `.env.example`). Do not commit or publish this key.
 
 ## Tests
 
