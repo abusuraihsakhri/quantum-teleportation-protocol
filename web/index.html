@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quantum Teleportation Protocol — Operations Console</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg: #090d16;
@@ -20,7 +19,7 @@
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: system-ui, sans-serif;
             background: var(--bg);
             color: var(--text);
             padding: 2rem;
@@ -96,7 +95,7 @@
             border: 1px solid var(--border);
             border-radius: 8px;
             padding: 1rem;
-            font-family: 'JetBrains Mono', monospace;
+            font-family: ui-monospace, monospace;
             font-size: 0.85rem;
             color: #10b981;
             height: 380px;
@@ -125,26 +124,26 @@
     <div class="header">
         <div class="header-title">
             <h1>Quantum Teleportation Protocol</h1>
-            <p>Domain: Clinical & Cryptographic AI | Standard: CAP / CLSI / NIST Standards | LabMind-Atlas Architecture</p>
+            <p>Threshold-audit API operations console. A running FastAPI backend is required.</p>
         </div>
         <div>
-            <span class="badge">Air-Gapped Active</span>
-            <span class="badge" style="background: rgba(16,185,129,0.2); color: #10b981; border-color: #10b981;">Zero-PHI Guard Active</span>
+            <span class="badge">Backend connection required</span>
+            <span class="badge" style="background: rgba(16,185,129,0.2); color: #10b981; border-color: #10b981;">Identifiers may be sent to the configured API</span>
         </div>
     </div>
 
     <div class="metrics-bar">
         <div class="metric-box">
             <div class="metric-label">System Status</div>
-            <div class="metric-val" style="color: var(--success);" id="m-status">OPTIMAL</div>
+            <div class="metric-val" style="color: var(--success);" id="m-status">UNKNOWN</div>
         </div>
         <div class="metric-box">
             <div class="metric-label">Tasks Processed</div>
-            <div class="metric-val" id="m-tasks">142</div>
+            <div class="metric-val" id="m-tasks">0</div>
         </div>
         <div class="metric-box">
             <div class="metric-label">Audit Blocks Signed</div>
-            <div class="metric-val" id="m-audit">142</div>
+            <div class="metric-val" id="m-audit">0</div>
         </div>
         <div class="metric-box">
             <div class="metric-label">PHI Interceptions</div>
@@ -184,17 +183,15 @@
         <div class="card">
             <h2>📊 Real-Time Consensus Dossier & Audit Log</h2>
             <div class="terminal" id="outputConsole">// Quantum Teleportation Protocol Operations Console Ready
-// Connection established with Air-Gapped Supervisor
-// Cryptographic HMAC-SHA256 audit ledger loaded.
-// Ready for live task payload dispatch...</div>
+// No connection has been verified.
+// Run the API on the same origin to use this console.</div>
         </div>
     </div>
 
     <script>
         async function runAudit() {
             const consoleEl = document.getElementById('outputConsole');
-            consoleEl.innerText = "// Dispatching task across specialized workers...
-// Invoking InvariantQCWorker, SafetyEscalationWorker, ProtocolWorker...";
+            consoleEl.innerText = "// Dispatching task to the configured API...";
 
             const payload = {
                 task_id: document.getElementById('task_id').value,
@@ -211,24 +208,19 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
+                if (!res.ok) {
+                    const detail = await res.text();
+                    throw new Error(`API returned ${res.status}: ${detail.slice(0, 500)}`);
+                }
                 const data = await res.json();
                 consoleEl.innerText = JSON.stringify(data, null, 2);
                 document.getElementById('m-tasks').innerText = parseInt(document.getElementById('m-tasks').innerText) + 1;
                 document.getElementById('m-audit').innerText = parseInt(document.getElementById('m-audit').innerText) + 1;
+                document.getElementById('m-status').innerText = 'CONNECTED';
             } catch (err) {
-                consoleEl.innerText = "// Offline / Simulation Output:\n" + JSON.stringify({
-                    dossier_id: "DOSSIER-SIM-" + Math.floor(Math.random()*10000),
-                    system: "quantum-teleportation-protocol",
-                    domain: "Clinical & Cryptographic AI",
-                    task_id: payload.task_id,
-                    overall_urgency: payload.is_critical_flag ? "CRITICAL_STAT_PANIC" : "ELEVATED_RISK",
-                    integrity_status: "DISCORDANT_ANOMALY",
-                    alerts: [
-                        { worker: "InvariantQCWorker", alert: "Primary metric exceeds upper reference bound" },
-                        { worker: "SafetyEscalationWorker", alert: "Critical emergency interlock flag active" }
-                    ],
-                    audit_hash: "HMAC_SHA256_e83f9a72b941d6c381f9"
-                }, null, 2);
+                document.getElementById('m-status').innerText = 'UNAVAILABLE';
+                consoleEl.innerText = "// API unavailable; audit was not performed.\n// " + String(err.message);
+
             }
         }
     </script>
