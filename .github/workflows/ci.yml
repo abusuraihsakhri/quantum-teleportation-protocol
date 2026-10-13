@@ -33,6 +33,10 @@ jobs:
         pytest -v
         python -m compileall -q quantum_teleportation agents
 
+    - name: Browser simulator regression tests
+      run: |
+        node --test tests/test_browser_simulator.cjs
+
     - name: Security SAST & Zero-PHI Audit
       run: |
         python -c "
