@@ -15,7 +15,7 @@ def create_app():
 
         app = FastAPI(
             title="Three-Qubit Quantum Teleportation & Bell State Measurement Agent",
-            description="Executes EPR entanglement distribution, Bell-basis measurement, classical 2-bit feedforward, and Pauli correction gates.",
+            description="Legacy threshold-audit API. Quantum teleportation is available through the separate simulation CLI.",
             version="2.0.0-FRONTIER",
         )
 
