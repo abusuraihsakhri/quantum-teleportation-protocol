@@ -37,7 +37,7 @@ def cmd_teleport(args):
     
     print(f"Quantum Teleportation:")
     print(f"  Target state: α={result['alpha']:.6f}, β={result['beta']:.6f}")
-    print(f"  Bell measurement: |{['Φ+', 'Φ-', 'Ψ+', 'Ψ-'][result['bell_measurement']]}⟩ "
+    print(f"  Bell measurement: |{['Φ+', 'Ψ+', 'Φ-', 'Ψ-'][result['bell_measurement']]}⟩ "
           f"(classical bits: {result['bell_measurement_binary']})")
     print(f"  Bell probabilities: {[f'{p:.4f}' for p in result['bell_probabilities']]}")
     print(f"  Correction gate: {result['correction_gate']}")
@@ -61,11 +61,19 @@ def cmd_verify(args):
         alpha, beta = complex(1 / math.sqrt(2)), complex(1 / math.sqrt(2))
     elif args.state == '|0⟩':
         alpha, beta = complex(1, 0), complex(0, 0)
+    elif args.state == '|1⟩':
+        alpha, beta = complex(0, 0), complex(1, 0)
+    elif args.state == '|-⟩':
+        alpha, beta = complex(1 / math.sqrt(2)), complex(-1 / math.sqrt(2))
+    elif args.state == '|i+⟩':
+        alpha, beta = complex(1 / math.sqrt(2)), complex(0, 1 / math.sqrt(2))
     else:
         parts = args.state.split(',')
+        if len(parts) != 2:
+            raise ValueError("Specify a supported state or two comma-separated complex amplitudes")
         alpha = complex(parts[0])
         beta = complex(parts[1])
-    
+
     result = verify_teleportation(alpha, beta, n_trials=args.trials, seed=args.seed)
     
     print(f"Teleportation Verification ({result['n_trials']} trials):")
@@ -75,7 +83,7 @@ def cmd_verify(args):
     print(f"  All fidelities > 0.99: {result['all_fidelities_above_099']}")
     print(f"\n  Bell measurement outcome distribution:")
     for outcome, prob in result['outcome_distribution'].items():
-        names = ['|Φ+⟩', '|Φ-⟩', '|Ψ+⟩', '|Ψ-⟩']
+        names = ['|Φ+⟩', '|Ψ+⟩', '|Φ-⟩', '|Ψ-⟩']
         print(f"    {names[outcome]}: {prob:.4f}")
     return 0
 
