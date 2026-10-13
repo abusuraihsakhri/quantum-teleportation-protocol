@@ -77,7 +77,15 @@
             font-family: inherit;
             font-size: 0.9rem;
         }
-        input:focus, textarea:focus { outline: none; border-color: var(--accent); }
+        input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px solid #93c5fd; outline-offset: 2px; }
+        input[type="checkbox"] { width: auto; margin-right: 0.5rem; }
+        @media (max-width: 850px) {
+            .grid { grid-template-columns: 1fr; }
+            .metrics-bar { grid-template-columns: repeat(2, minmax(0,1fr)); }
+            body { padding: 1rem; }
+            .header { flex-wrap: wrap; gap: 1rem; }
+        }
+        @media (max-width: 440px) { .metrics-bar { grid-template-columns: 1fr 1fr; gap: 0.5rem; } .metric-box { padding: .6rem; } }
         .btn {
             background: var(--accent);
             color: #fff;
@@ -146,8 +154,8 @@
             <div class="metric-val" id="m-audit">0</div>
         </div>
         <div class="metric-box">
-            <div class="metric-label">PHI Interceptions</div>
-            <div class="metric-val" style="color: var(--accent);" id="m-phi">0</div>
+            <div class="metric-label">PHI Guard Telemetry</div>
+            <div class="metric-val" style="color: var(--accent);" id="m-phi">N/A</div>
         </div>
     </div>
 
@@ -155,27 +163,27 @@
         <div class="card">
             <h2>⚙️ Dispatch Distributed Component Audit</h2>
             <div class="form-group">
-                <label>Task / Sample ID</label>
+                <label for="task_id">Task / Sample ID</label>
                 <input type="text" id="task_id" value="TASK-2026-LIVE-01">
             </div>
             <div class="form-group">
-                <label>Target Identifier</label>
+                <label for="target_id">Target Identifier</label>
                 <input type="text" id="target_id" value="SPECIMEN-ALPHA-77">
             </div>
             <div class="form-group">
-                <label>Primary Measurement / Value</label>
+                <label for="primary_metric">Primary Measurement / Value</label>
                 <input type="number" id="primary_metric" value="29.4" step="0.1">
             </div>
             <div class="form-group">
-                <label>Secondary Metric / Kinetic Index</label>
+                <label for="secondary_metric">Secondary Metric / Kinetic Index</label>
                 <input type="number" id="secondary_metric" value="14.8" step="0.1">
             </div>
             <div class="form-group">
-                <label>Status / Phenotype Descriptor</label>
+                <label for="status_descriptor">Status / Phenotype Descriptor</label>
                 <input type="text" id="status_descriptor" value="DISCORDANT_ANOMALY">
             </div>
             <div class="form-group">
-                <label><input type="checkbox" id="is_critical" checked> Trigger Emergency / Critical Flag</label>
+                <label for="is_critical"><input type="checkbox" id="is_critical" checked> Trigger Emergency / Critical Flag</label>
             </div>
             <button class="btn" onclick="runAudit()">Execute Distributed Component Audit</button>
         </div>
@@ -203,6 +211,9 @@
             };
 
             try {
+                if (!Number.isFinite(payload.primary_metric) || !Number.isFinite(payload.secondary_metric)) {
+                    throw new Error('Both measurement fields must be valid finite numbers.');
+                }
                 const res = await fetch('/api/audit', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
