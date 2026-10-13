@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="An interactive, in-browser three-qubit quantum teleportation simulator.">
+  <title>Quantum Teleportation | State-vector Simulator</title>
+  <style>
+    :root { color-scheme: dark; --bg:#0b1324; --panel:#151f34; --border:#34445e; --text:#eef4ff; --muted:#b7c5da; --accent:#7ac9ff; --good:#80e3bb }
+    * { box-sizing:border-box }
+    body { margin:0; background:var(--bg); color:var(--text); font:16px/1.55 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif }
+    main { max-width:1100px; padding:30px 20px 70px; margin:auto }
+    h1 { font-size:clamp(1.75rem,4vw,2.45rem); margin:0 0 .5rem; line-height:1.2 }
+    h2 { font-size:1.15rem; margin:0 0 18px }
+    p { margin:.35rem 0 1rem; color:var(--muted) }
+    a { color:var(--accent) }
+    .eyebrow { color:var(--accent); font-size:.8rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase }
+    .panel { padding:23px; background:var(--panel); border:1px solid var(--border); border-radius:14px }
+    .layout { display:grid; grid-template-columns:minmax(0, .9fr) minmax(0, 1.1fr); gap:20px; align-items:start; margin-top:25px }
+    .fields { display:grid; grid-template-columns:1fr 1fr; gap:14px }
+    .wide { grid-column:1/-1 }
+    label { display:block; font-weight:600; font-size:.9rem; margin:0 0 5px }
+    input,select,button { font:inherit; border-radius:8px }
+    input,select { width:100%; padding:10px 12px; background:#0d192e; color:var(--text); border:1px solid #61738f }
+    input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible { outline:3px solid var(--accent); outline-offset:2px }
+    .hint { font-size:.8rem; margin:4px 0 0 }
+    .buttons { display:flex; gap:10px; flex-wrap:wrap; margin:18px 0 0 }
+    button { cursor:pointer; padding:11px 18px; color:#061220; font-weight:700; border:1px solid var(--accent); background:var(--accent) }
+    button.secondary { background:transparent; color:var(--text); border-color:#7183a0 }
+    button:hover { filter:brightness(1.08) }
+    .protocol { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:25px 0 }
+    .step { border:1px solid var(--border); padding:14px; border-radius:10px; font-size:.86rem }
+    .step strong { display:block; color:var(--accent); margin-bottom:5px }
+    .output-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:0 0 18px }
+    .stat { border:1px solid var(--border); border-radius:9px; padding:12px; min-width:0 }
+    .stat span { display:block; font-size:.78rem; color:var(--muted); text-transform:uppercase; letter-spacing:.04em }
+    .stat strong { font-size:1.22rem; color:var(--good); word-break:break-word }
+    .mono { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:.88rem; overflow-wrap:anywhere }
+    .bars { display:grid; gap:8px; margin-top:10px }
+    .bar-row { display:grid; grid-template-columns:34px minmax(0,1fr) 65px; align-items:center; gap:8px; font: .86rem ui-monospace,monospace }
+    .track { background:#0d192e; border-radius:4px; height:12px; border:1px solid #42516c; overflow:hidden }
+    .fill { background:var(--accent); height:100%; width:0 }
+    #message { color:var(--good); min-height:1.6em; margin:13px 0 0 }
+    #message.error { color:#ffb8ac }
+    .footnote { font-size:.88rem; margin-top:22px }
+    footer { font-size:.87rem; color:var(--muted); padding-top:30px }
+    @media (max-width:750px) { .layout { grid-template-columns:1fr } .protocol { grid-template-columns:1fr 1fr } }
+    @media (max-width:450px) { .fields { grid-template-columns:1fr } .wide { grid-column:auto } .protocol { grid-template-columns:1fr } .panel { padding:17px } }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">Quantum information · Interactive simulation</div>
+    <h1>Quantum Teleportation Protocol</h1>
+    <p>Simulate the Bennett et al. (1993) three-qubit teleportation circuit. Everything runs in your browser; no backend, sign-in, or data upload is required.</p>
+  </header>
+
+  <section class="protocol" aria-label="Teleportation protocol steps">
+    <div class="step"><strong>01 · Prepare</strong>Input |ψ⟩ and shared Bell pair |Φ+⟩</div>
+    <div class="step"><strong>02 · Measure</strong>Alice applies CNOT, H, then measures two qubits</div>
+    <div class="step"><strong>03 · Communicate</strong>Alice sends two classical bits to Bob</div>
+    <div class="step"><strong>04 · Correct</strong>Bob applies the appropriate Pauli correction</div>
+  </section>
+
+  <div class="layout">
+    <section class="panel" aria-labelledby="configure-title">
+      <h2 id="configure-title">Input qubit</h2>
+      <div class="fields">
+        <div class="wide">
+          <label for="preset">State preset</label>
+          <select id="preset">
+            <option value="plus">|+⟩ · Equal superposition</option>
+            <option value="zero">|0⟩</option>
+            <option value="one">|1⟩</option>
+            <option value="minus">|−⟩</option>
+            <option value="iplus">|+i⟩</option>
+            <option value="custom">Custom Bloch angles</option>
+          </select>
+        </div>
+        <div>
+          <label for="theta">Polar angle θ (degrees)</label>
+          <input type="number" id="theta" min="0" max="180" step="any" value="90">
+        </div>
+        <div>
+          <label for="phi">Azimuth φ (degrees)</label>
+          <input type="number" id="phi" min="-180" max="180" step="any" value="0">
+        </div>
+        <div>
+          <label for="seed">Random seed</label>
+          <input type="number" id="seed" min="0" max="4294967295" step="1" value="42">
+        </div>
+        <div>
+          <label for="trials">Verification trials</label>
+          <input type="number" id="trials" min="1" max="100000" step="1" value="1000">
+        </div>
+      </div>
+      <p class="hint">|ψ⟩ = cos(θ/2)|0⟩ + exp(iφ) sin(θ/2)|1⟩. Angles define a normalized pure state.</p>
+      <div class="buttons">
+        <button id="run" type="button">Teleport one qubit</button>
+        <button id="verify" type="button" class="secondary">Verify trials</button>
+        <button id="export" type="button" class="secondary" disabled>Export JSON</button>
+      </div>
+      <p id="message" role="status" aria-live="polite">Choose a state and run the simulator.</p>
+    </section>
+
+    <section class="panel" aria-labelledby="results-title">
+      <h2 id="results-title">Simulation results</h2>
+      <div class="output-grid">
+        <div class="stat"><span>Teleportation fidelity</span><strong id="fidelity">—</strong></div>
+        <div class="stat"><span>Alice's two bits</span><strong id="bits">—</strong></div>
+        <div class="stat"><span>Bob's correction</span><strong id="correction">—</strong></div>
+        <div class="stat"><span>Bloch vector (x, y, z)</span><strong id="bloch" class="mono">—</strong></div>
+      </div>
+      <p><strong>Corrected Bob state</strong></p>
+      <div id="bob" class="mono" aria-live="polite">Run the protocol to inspect the state.</div>
+      <h2 style="margin-top:24px">Classical outcome distribution</h2>
+      <div id="bar-title" class="hint">Single-trial measurement probabilities</div>
+      <div class="bars" id="bars"></div>
+    </section>
+  </div>
+  <p class="footnote">In an ideal noiseless simulation, correction restores Bob's state with unit fidelity (up to a global phase). Trial-to-trial variation comes from the two classical measurement bits, not from errors in the ideal protocol. This is a software simulation, not a quantum-hardware experiment.</p>
+  <footer>
+    <a href="https://github.com/abusuraihsakhri/quantum-teleportation-protocol">Source code and Python CLI</a> · Local computation only · No input values are transmitted or stored by this app.
+  </footer>
+</main>
+<script src="simulator.js"></script>
+<script>
+(function () {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const presets = { plus:[90,0], zero:[0,0], one:[180,0], minus:[90,180], iplus:[90,90] };
+  let latest = null;
+  function showError(message) { $("message").textContent = message; $("message").classList.add("error"); }
+  function showMessage(message) { $("message").textContent = message; $("message").classList.remove("error"); }
+  function configuration() {
+    const theta = Number($("theta").value), phi = Number($("phi").value);
+    const seed = Number($("seed").value), trials = Number($("trials").value);
+    if ([$("theta"),$("phi"),$("seed"),$("trials")].some(input => input.value.trim() === "")) throw Error("All numeric fields are required.");
+    if (theta < 0 || theta > 180 || phi < -180 || phi > 180) throw Error("θ must be 0–180° and φ must be −180–180°.");
+    return { theta:theta*Math.PI/180, phi:phi*Math.PI/180, seed, trials };
+  }
+  function complex(a) {
+    return a.re.toFixed(5) + (a.im < 0 ? " − " : " + ") + Math.abs(a.im).toFixed(5) + "i";
+  }
+  function distribution(values, denominator) {
+    const bars = $("bars");
+    bars.replaceChildren();
+    values.forEach((value,k) => {
+      const frac = value/denominator;
+      const row = document.createElement("div");
+      row.className = "bar-row";
+      const bits = document.createElement("span");
+      bits.textContent = k.toString(2).padStart(2,"0");
+      const track = document.createElement("div"); track.className = "track";
+      const fill = document.createElement("div"); fill.className = "fill";
+      fill.style.width = Math.max(0,Math.min(100,100*frac)) + "%";
+      track.append(fill);
+      const pct = document.createElement("span"); pct.textContent = (100*frac).toFixed(1) + "%";
+      row.append(bits,track,pct); bars.append(row);
+    });
+  }
+  function updateOne(result) {
+    $("fidelity").textContent = result.fidelity.toFixed(10);
+    $("bits").textContent = result.bits;
+    $("correction").textContent = result.correction;
+    $("bloch").textContent = "(" + result.bloch.map(x => x.toFixed(3)).join(", ") + ")";
+    $("bob").textContent = "(" + complex(result.bob[0]) + ")|0⟩ + (" + complex(result.bob[1]) + ")|1⟩";
+    $("bar-title").textContent = "Exact ideal outcome probabilities";
+    distribution(result.probabilities,1);
+  }
+  $("preset").addEventListener("change", () => {
+    const angles = presets[$("preset").value];
+    if (angles) { $("theta").value = angles[0]; $("phi").value = angles[1]; }
+  });
+  for(const id of ["theta","phi"]) $(id).addEventListener("input", () => { $("preset").value = "custom"; });
+  $("run").addEventListener("click", () => {
+    try {
+      const config = configuration();
+      const result = TeleportationSimulator.run(config);
+      updateOne(result);
+      latest = { mode:"single", configuration:config, result };
+      $("export").disabled = false;
+      showMessage("One ideal teleportation trial completed locally.");
+    } catch (err) { showError(err.message); }
+  });
+  $("verify").addEventListener("click", () => {
+    try {
+      const config = configuration();
+      const summary = TeleportationSimulator.verify(config);
+      const first = TeleportationSimulator.run(config);
+      updateOne(first);
+      $("fidelity").textContent = summary.meanFidelity.toFixed(10);
+      $("bits").textContent = "multiple";
+      $("correction").textContent = "per outcome";
+      $("bob").textContent = "Mean fidelity: " + summary.meanFidelity.toFixed(10) + "; minimum: " + summary.minFidelity.toFixed(10);
+      $("bar-title").textContent = "Observed results across " + summary.trials + " trials";
+      distribution(summary.counts,summary.trials);
+      latest = { mode:"verification", configuration:config, summary };
+      $("export").disabled = false;
+      showMessage(summary.trials + " simulated measurements completed locally.");
+    } catch (err) { showError(err.message); }
+  });
+  $("export").addEventListener("click", () => {
+    if (!latest) return;
+    const blob = new Blob([JSON.stringify(latest,null,2)], { type:"application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "teleportation-result.json"; a.click();
+    setTimeout(() => URL.revokeObjectURL(url),1000);
+  });
+})();
+</script>
+</body>
+</html>
