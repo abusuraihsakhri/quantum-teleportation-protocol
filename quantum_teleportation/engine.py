@@ -260,8 +260,11 @@ def bell_measurement(state: List[complex]) -> Tuple[int, List[float]]:
 
 def get_correction_gate(bell_measurement: int) -> List[List[complex]]:
     """
-    Get Bob's correction gate based on Alice's measurement outcome.
-    
+    Get Bob's correction for the computational-basis two-bit outcome.
+
+    This index is produced after CNOT(q0,q1) and H(q0); do not pass
+    the differently ordered Bell-basis index from bell_measurement().
+
     Measurement outcome → Correction:
     0 (00) → I (no correction needed)
     1 (01) → X (bit flip)
