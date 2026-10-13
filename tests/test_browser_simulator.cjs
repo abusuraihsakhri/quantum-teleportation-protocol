@@ -42,3 +42,16 @@ test("reject out-of-range, non-finite, and unsupported inputs", () => {
   assert.throws(() => verify({theta:1,phi:2,trials:0}), RangeError);
   assert.throws(() => verify({theta:1,phi:2,trials:100001}), RangeError);
 });
+
+test("static page references the simulation and has syntactically valid UI code", () => {
+  const fs = require("node:fs");
+  const vm = require("node:vm");
+  const html = fs.readFileSync(require("node:path").join(__dirname, "../docs/index.html"), "utf8");
+  assert.match(html, /<script src="simulator\.js"><\/script>/);
+  for (const id of ["theta", "phi", "seed", "trials", "run", "verify", "export", "message"]) {
+    assert.match(html, new RegExp('id="' + id + '"'));
+  }
+  const inline = html.match(/<script>([\s\S]*?)<\/script>/);
+  assert.ok(inline, "interactive UI code exists");
+  assert.doesNotThrow(() => new vm.Script(inline[1], { filename: "docs/index.html" }));
+});
