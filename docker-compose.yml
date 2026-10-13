@@ -1,13 +1,11 @@
-version: '3.8'
-
 services:
   quantum-teleportation-protocol:
     build: .
     container_name: quantum-teleportation-protocol
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     environment:
-      - AUDIT_SECRET_KEY=quantum-teleportation-protocol-prod-audit-key-2026
+      - AUDIT_SECRET_KEY=${AUDIT_SECRET_KEY:?Set AUDIT_SECRET_KEY to a strong private value}
       - MODEL_PROVIDER=mock
     restart: unless-stopped
     healthcheck:

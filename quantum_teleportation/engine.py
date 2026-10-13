@@ -90,6 +90,8 @@ def normalize_state(state: List[complex]) -> List[complex]:
 
 def fidelity(state1: List[complex], state2: List[complex]) -> float:
     """F = |⟨ψ1|ψ2⟩|²."""
+    if len(state1) != len(state2):
+        raise ValueError("Fidelity requires state vectors of equal dimension")
     inner = sum(a.conjugate() * b for a, b in zip(state1, state2))
     return abs(inner) ** 2
 
@@ -195,10 +197,10 @@ def create_teleportation_state(alpha: complex, beta: complex) -> List[complex]:
     
     Qubit layout: [q0=Alice's state, q1=Alice's Bell half, q2=Bob's Bell half]
     """
-    # Normalize alpha, beta
-    norm = math.sqrt(abs(alpha) ** 2 + abs(beta) ** 2)
-    if norm < 1e-15:
-        raise ValueError("State cannot be zero")
+    # Normalize alpha, beta while rejecting non-physical inputs.
+    norm = math.hypot(abs(alpha), abs(beta))
+    if not math.isfinite(norm) or norm < 1e-15:
+        raise ValueError("Amplitudes must be finite and not both zero")
     alpha_n = alpha / norm
     beta_n = beta / norm
     
@@ -258,8 +260,11 @@ def bell_measurement(state: List[complex]) -> Tuple[int, List[float]]:
 
 def get_correction_gate(bell_measurement: int) -> List[List[complex]]:
     """
-    Get Bob's correction gate based on Alice's measurement outcome.
-    
+    Get Bob's correction for the computational-basis two-bit outcome.
+
+    This index is produced after CNOT(q0,q1) and H(q0); do not pass
+    the differently ordered Bell-basis index from bell_measurement().
+
     Measurement outcome → Correction:
     0 (00) → I (no correction needed)
     1 (01) → X (bit flip)
@@ -295,11 +300,12 @@ def teleport(alpha: complex, beta: complex, seed: Optional[int] = None) -> dict:
     
     Returns dict with protocol results.
     """
-    if seed is not None:
-        random.seed(seed)
+    rng = random.Random(seed)
     
-    # Normalize input state
-    norm = math.sqrt(abs(alpha) ** 2 + abs(beta) ** 2)
+    # Normalize input state; invalid amplitudes must not yield NaN fidelities.
+    norm = math.hypot(abs(alpha), abs(beta))
+    if not math.isfinite(norm) or norm < 1e-15:
+        raise ValueError("Amplitudes must be finite and not both zero")
     alpha_n = alpha / norm
     beta_n = beta / norm
     target_state = [alpha_n, beta_n]
@@ -326,7 +332,7 @@ def teleport(alpha: complex, beta: complex, seed: Optional[int] = None) -> dict:
         outcome_probs[q01] = prob
     
     # Choose measurement outcome
-    r = random.random()
+    r = rng.random()
     cumulative = 0.0
     outcome = 3
     for i in range(4):
@@ -419,9 +425,12 @@ def state_tomography(state: List[complex]) -> dict:
     if len(state) != 2:
         raise ValueError("State tomography requires a single-qubit state")
     
-    alpha = state[0]
-    beta = state[1]
-    
+    norm = math.hypot(abs(state[0]), abs(state[1]))
+    if not math.isfinite(norm) or norm < 1e-15:
+        raise ValueError("State tomography requires finite nonzero amplitudes")
+    alpha = state[0] / norm
+    beta = state[1] / norm
+
     # Density matrix ρ = |ψ⟩⟨ψ|
     rho = [
         [alpha * alpha.conjugate(), alpha * beta.conjugate()],
@@ -431,10 +440,10 @@ def state_tomography(state: List[complex]) -> dict:
     # Bloch sphere coordinates
     # ρ = (I + r·σ)/2
     # r_x = 2 Re(α*β)
-    # r_y = 2 Im(α*β)  (actually -2 Im for convention)
+    # r_y = 2 Im(conjugate(α) β), using the Pauli-Y convention
     # r_z = |α|² - |β|²
     r_x = 2 * (alpha.conjugate() * beta).real
-    r_y = -2 * (alpha.conjugate() * beta).imag
+    r_y = 2 * (alpha.conjugate() * beta).imag
     r_z = abs(alpha) ** 2 - abs(beta) ** 2
     
     return {
@@ -451,12 +460,14 @@ def verify_teleportation(alpha: complex, beta: complex, n_trials: int = 1000,
     """
     Run teleportation multiple times and verify average fidelity.
     """
-    random.seed(seed)
+    if not isinstance(n_trials, int) or n_trials < 1:
+        raise ValueError("n_trials must be a positive integer")
+    rng = random.Random(seed)
     fidelities = []
     outcomes = {0: 0, 1: 0, 2: 0, 3: 0}
     
     for _ in range(n_trials):
-        result = teleport(alpha, beta)
+        result = teleport(alpha, beta, seed=rng.randrange(2 ** 63))
         fidelities.append(result['fidelity'])
         outcomes[result['bell_measurement']] += 1
     
@@ -489,18 +500,18 @@ Step 2: Alice's operations
 
 Step 3: Alice measures q0 and q1
   - 4 possible outcomes (2 classical bits):
-    00 → |Φ+⟩ → Bob applies I
-    01 → |Φ-⟩ → Bob applies Z
-    10 → |Ψ+⟩ → Bob applies X
-    11 → |Ψ-⟩ → Bob applies ZX
+    00 → Bob applies I
+    01 → Bob applies X
+    10 → Bob applies Z
+    11 → Bob applies ZX
 
 Step 4: Bob applies correction
   - Based on 2 classical bits from Alice
   - Bob's qubit is now in state |ψ⟩ = α|0⟩ + β|1⟩
 
-Correction table:
-  |Φ+⟩ (00) → I  (no change)
-  |Φ-⟩ (01) → Z  (phase flip)
-  |Ψ+⟩ (10) → X  (bit flip)
-  |Ψ-⟩ (11) → ZX (bit + phase flip)
+Computational-basis measurement after CNOT(q0,q1) and H(q0):
+  00 → I  (no change)
+  01 → X  (bit flip)
+  10 → Z  (phase flip)
+  11 → ZX (bit + phase flip)
 """

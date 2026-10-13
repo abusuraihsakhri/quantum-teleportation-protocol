@@ -5,7 +5,7 @@ Domain: Quantum Information
 import uuid
 from typing import Dict, Any, List, Optional
 from .models import FrontierPayload, AgentTelemetryAlert, ExecutionStatus
-from .engine import FrontierDomainEngine
+from .legacy_rules import FrontierDomainEngine
 
 
 class EPRPairDistributorAgent:
