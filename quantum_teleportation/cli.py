@@ -74,7 +74,7 @@ def main(argv=None):
         # Path traversal protection: resolve and validate input path
         input_path = Path(args.input).resolve()
         cwd = Path.cwd().resolve()
-        if not str(input_path).startswith(str(cwd)):
+        if not input_path.is_relative_to(cwd):
             print(f"Error: Input path must be within the current working directory: {cwd}")
             return 1
         if not input_path.is_file():
@@ -86,7 +86,7 @@ def main(argv=None):
             fieldnames = list(reader.fieldnames or [])
             rows = list(reader)
 
-        out_fields = fieldnames + ["overall_status", "total_alerts", "critical_count", "consensus_summary"]
+        out_fields = list(dict.fromkeys(fieldnames + ["overall_status", "total_alerts", "critical_count", "consensus_summary"]))
         out_rows = []
         for r in rows:
             payload = FrontierPayload(
@@ -95,7 +95,7 @@ def main(argv=None):
                 primary_metric=float(r.get("primary_metric", 15.0)),
                 secondary_metric=float(r.get("secondary_metric", 5.0)),
                 status_descriptor=r.get("status_descriptor", "NOMINAL"),
-                is_critical_flag=bool(r.get("is_critical_flag", False)),
+                is_critical_flag=str(r.get("is_critical_flag", "")).strip().lower() in ("true", "1", "yes", "y"),
             )
             dossier = coordinator.process(payload)
             row_dict = dict(r)
@@ -107,7 +107,7 @@ def main(argv=None):
 
         # Path traversal protection: resolve and validate output path
         output_path = Path(args.output).resolve()
-        if not str(output_path).startswith(str(cwd)):
+        if not output_path.is_relative_to(cwd):
             print(f"Error: Output path must be within the current working directory: {cwd}")
             return 1
 
