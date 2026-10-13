@@ -24,11 +24,14 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install fastapi uvicorn pydantic pytest
+        pip install -e ".[server,test]"
+        python -m pip check
+        quantum-teleportation-protocol teleport --state "|i+⟩" --seed 42
 
     - name: Run Pytest Suite
       run: |
         pytest -v
+        python -m compileall -q quantum_teleportation agents
 
     - name: Security SAST & Zero-PHI Audit
       run: |
