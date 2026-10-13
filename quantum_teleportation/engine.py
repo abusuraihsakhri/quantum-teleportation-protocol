@@ -90,6 +90,8 @@ def normalize_state(state: List[complex]) -> List[complex]:
 
 def fidelity(state1: List[complex], state2: List[complex]) -> float:
     """F = |⟨ψ1|ψ2⟩|²."""
+    if len(state1) != len(state2):
+        raise ValueError("Fidelity requires state vectors of equal dimension")
     inner = sum(a.conjugate() * b for a, b in zip(state1, state2))
     return abs(inner) ** 2
 
@@ -195,10 +197,10 @@ def create_teleportation_state(alpha: complex, beta: complex) -> List[complex]:
     
     Qubit layout: [q0=Alice's state, q1=Alice's Bell half, q2=Bob's Bell half]
     """
-    # Normalize alpha, beta
-    norm = math.sqrt(abs(alpha) ** 2 + abs(beta) ** 2)
-    if norm < 1e-15:
-        raise ValueError("State cannot be zero")
+    # Normalize alpha, beta while rejecting non-physical inputs.
+    norm = math.hypot(abs(alpha), abs(beta))
+    if not math.isfinite(norm) or norm < 1e-15:
+        raise ValueError("Amplitudes must be finite and not both zero")
     alpha_n = alpha / norm
     beta_n = beta / norm
     
@@ -420,9 +422,12 @@ def state_tomography(state: List[complex]) -> dict:
     if len(state) != 2:
         raise ValueError("State tomography requires a single-qubit state")
     
-    alpha = state[0]
-    beta = state[1]
-    
+    norm = math.hypot(abs(state[0]), abs(state[1]))
+    if not math.isfinite(norm) or norm < 1e-15:
+        raise ValueError("State tomography requires finite nonzero amplitudes")
+    alpha = state[0] / norm
+    beta = state[1] / norm
+
     # Density matrix ρ = |ψ⟩⟨ψ|
     rho = [
         [alpha * alpha.conjugate(), alpha * beta.conjugate()],
