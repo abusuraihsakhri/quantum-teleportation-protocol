@@ -19,8 +19,16 @@ classifiers = [
 requires-python = ">=3.9"
 dependencies = []
 
+[project.optional-dependencies]
+server = ["fastapi>=0.100,<1", "uvicorn>=0.20,<1", "pydantic>=2,<3"]
+test = ["pytest>=8,<10"]
+
+[tool.setuptools]
+packages = ["quantum_teleportation", "agents"]
+py-modules = ["cli", "enrichment", "simulator", "quantum_teleportation_app"]
+
 [project.scripts]
-quantum-teleportation-protocol = "quantum_teleportation.cli:main"
+quantum-teleportation-protocol = "cli:main"
 
 [project.urls]
 Homepage = "https://github.com/abusuraihsakhri/quantum-teleportation-protocol"
